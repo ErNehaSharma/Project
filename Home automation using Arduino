@@ -1,0 +1,158 @@
+## Projects
+
+### Home Automation with Sensors and LCD
+
+- 🏠 Create your very own smart home!
+- 💡 Control lights, temperature, and more with just a few lines of code.
+- 📊 Monitor your home's environment with sensors.
+- 🖥️ Display important data on an LCD screen.
+- 🔗 [Check out the project here]( )
+
+### Other Cool Projects
+
+- 🚀 Mention some of your other exciting projects.
+
+## Tinkercad Simulation [(https://www.tinkercad.com/things/dPzYd86sVVV-smooth-blorr-habbi/editel?tenant=circuits)]
+
+I've created a Tinkercad simulation to help you visualize and understand how the home automation system works. You can access the simulation [here](link-to-tinkercad).
+
+Feel free to explore the code and try out the simulation. I hope you find it useful and inspiring for your own projects. Don't hesitate to reach out if you have any questions or need assistance with anything related to home automation, sensors, or coding.
+
+Happy coding! 🚀
+
+
+Initially the library is declared 
+
+#include <LiquidCrystal.h>
+
+// Then the variables are declared for Temperature sensor Pin, Fan pin, Ambient outdoor light pin, distance and duration for ultrasonic, burglar detection status and for trigger and echo pins. 
+
+int tempVal = A2; 
+int fan = 13; 
+
+int AmbSen = 0;
+int outdoor = 5;
+
+long distance; 
+int duration;
+
+int Burglar = 0;
+
+int trig=7;
+int echo=6;
+
+// LCD is declared and pins are allocated. Here even analog pins are used as we had a shortage of digital pins. Since we discussed that under some circumstances, we can perform digital read or write using analog pins as well, thus, we are using the analog pins for the purpose here. 
+
+LiquidCrystal lcd(12, 11, 9, 8, A3, A4);
+//int count = 0;     
+
+Setup function to declare initial conditions. 
+
+void setup()
+{
+  Serial.begin(9600);
+  pinMode(fan, OUTPUT); 
+  pinMode(outdoor, OUTPUT); 
+  pinMode(tempVal, INPUT); 
+  pinMode(A0, INPUT);
+  pinMode(4, INPUT);
+  pinMode(A5, OUTPUT);
+   pinMode(2, OUTPUT);
+ pinMode(7, OUTPUT);
+ pinMode(6, INPUT);
+  attachInterrupt(digitalPinToInterrupt(3),stop,CHANGE);
+}
+
+// We have kept everything in a single function so that every sensor value is detected all the times and all the operations can happen in parallel. The delays are kept low for the same purpose. Burglar alarm is given the highest priority and it can override other sensors. It can also be reset with reset button. 
+
+void loop()
+{
+    // Temperature Controlled Fan 
+  float temp = analogRead(A2);    //Read the analog pin
+  temp = (temp * 0.48828125) - 49;   // convert output (mv) to readable celcius
+  lcd.clear();
+  lcd.print("Temperature: ");
+  Serial.print("Temperature: ");
+  Serial.print(temp);
+  lcd.print(temp);
+  Serial.println(" C");  //print the temperature status
+  lcd.println(" C");
+  delay(100); 
+  
+//Temperature conditions are given to start or stop the fan at particular temperatures. 
+
+  if(temp > 28)
+  {
+    digitalWrite(fan, HIGH);
+    delay(100);
+  }
+   else if((temp > 23) && (temp < 28))
+  {
+    digitalWrite(fan, HIGH);
+    delay(100);
+  }
+  else
+  {
+    digitalWrite(fan, LOW);
+      Serial.print("Temperature: ");
+     delay(100);
+  }  
+
+// The outdoor light control program is given below. 
+// Automated Outdoor Light 
+AmbSen = analogRead(A0);
+  Serial.println(AmbSen);
+  if(AmbSen < 400)
+  {    
+    
+    digitalWrite(outdoor, HIGH);
+    delay(100);
+  }
+  else
+  {    
+    digitalWrite(outdoor, LOW);
+    delay(100);
+  }
+
+//Burglar detection is done using PIR sensor at pin 4 and the lights are switched on at pin A5. Again, we are using analog pin to write digital values here. 
+
+  // Burglar Detection 
+  Burglar = digitalRead(4);
+  if(Burglar == HIGH)
+  {
+    digitalWrite(A5, HIGH);
+    delay(10000);
+  }
+  else
+  {
+    digitalWrite(A5, LOW);
+    delay(100);
+  }
+ 
+//In water level monitoring, more LEDs are not added because of non-avaialbility of pins. A simple if else condition is applied.      
+ // Water Level Monitoring 
+ digitalWrite(7,HIGH);
+ digitalWrite(7,LOW);
+ duration=pulseIn(echo,HIGH);
+ distance=duration*(0.034/2);
+   if(distance>100)
+{
+ digitalWrite(2,HIGH);  
+ delay(100);
+}
+  else
+  {
+    digitalWrite(2,LOW);  
+    Serial.println(distance);
+    delay(100);
+  }
+}
+
+//The Stop function is called by the interrupt and it will disable the alarm raised by the burglar detection mechanism. 
+
+void stop()
+{
+  digitalWrite(A5,LOW);
+  Serial.println(distance);
+  delay(100);
+ }
